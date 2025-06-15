@@ -71,6 +71,12 @@ class HomeScreen extends StatelessWidget {
             Icons.inventory_2,
             () => Navigator.pushNamed(context, '/inventario'),
           ),
+          _buildMenuCard(
+            context,
+            'Inventario Actividades',
+            Icons.event_available,
+            () => Navigator.pushNamed(context, '/inventario-actividad'),
+          ),
         ],
       ),
     );
@@ -105,6 +111,7 @@ class HomeScreen extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

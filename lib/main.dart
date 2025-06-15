@@ -5,6 +5,7 @@ import 'screens/cliente_profile_screen.dart';
 import 'screens/clientes_screen.dart';
 import 'screens/destinos_screen.dart';
 import 'screens/inventario_screen.dart';
+import 'screens/inventario_actividad_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
         '/clientes': (context) => const ClientesScreen(),
         '/destinos': (context) => const DestinosScreen(),
         '/inventario': (context) => const InventarioScreen(),
+        '/inventario-actividad': (context) => const InventarioActividadScreen(),
       },
     );
   }
