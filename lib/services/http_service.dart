@@ -25,22 +25,22 @@ class HttpService {
     return response;
   }
 
-  static Future<http.Response> post(String endpoint, dynamic body) async {
+  static Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
     final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
-      body: jsonEncode(body),
+      body: json.encode(body),
     );
     return response;
   }
 
-  static Future<http.Response> put(String endpoint, dynamic body) async {
+  static Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
     final headers = await _getHeaders();
     final response = await http.put(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
-      body: jsonEncode(body),
+      body: json.encode(body),
     );
     return response;
   }

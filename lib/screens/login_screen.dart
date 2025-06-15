@@ -76,7 +76,15 @@ class _LoginScreenState extends State<LoginScreen> {
         }));
 
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+          if (response['role'] == 'CLIENTE') {
+            Navigator.pushReplacementNamed(
+              context,
+              '/cliente-profile',
+              arguments: response['correo'],
+            );
+          } else {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
         }
       } else {
         setState(() {

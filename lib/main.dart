@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/cliente_profile_screen.dart';
+import 'screens/clientes_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,6 +44,10 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
+        '/cliente-profile': (context) => ClienteProfileScreen(
+          correo: ModalRoute.of(context)!.settings.arguments as String,
+        ),
+        '/clientes': (context) => const ClientesScreen(),
       },
     );
   }

@@ -53,6 +53,12 @@ class HomeScreen extends StatelessWidget {
             Icons.calendar_today,
             () => Navigator.pushNamed(context, '/reservas'),
           ),
+          _buildMenuCard(
+            context,
+            'Clientes',
+            Icons.people,
+            () => Navigator.pushNamed(context, '/clientes'),
+          ),
         ],
       ),
     );
