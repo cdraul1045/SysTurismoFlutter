@@ -82,30 +82,11 @@ class DestinoService {
       print('Actualizando destino con ID: ${destino.idDestino}');
       print('Datos a actualizar: ${destino.toJson()}');
       
-      // Intentamos primero con PUT
-      try {
-        final response = await HttpService.put(
-          '/api/destino/modificar/${destino.idDestino}',
-          destino.toJson(),
-        );
-        print('Respuesta de actualizar destino (PUT): ${response.body}');
-        
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          final destinoActualizado = Destino.fromJson(data);
-          print('Destino actualizado: ${destinoActualizado.toString()}');
-          return destinoActualizado;
-        }
-      } catch (e) {
-        print('Error con PUT, intentando con POST: $e');
-      }
-
-      // Si PUT falla, intentamos con POST
-      final response = await HttpService.post(
-        '/api/destino/modificar/${destino.idDestino}',
+      final response = await HttpService.put(
+        '/api/destino/editar',
         destino.toJson(),
       );
-      print('Respuesta de actualizar destino (POST): ${response.body}');
+      print('Respuesta de actualizar destino: ${response.body}');
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -179,7 +160,7 @@ class DestinoService {
       print('Actualizando destino con imagen. ID: ${destino.idDestino}');
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/api/destino/modificar-con-imagen/${destino.idDestino}'),
+        Uri.parse('$baseUrl/api/destino/guardar-con-imagen'),
       );
 
       request.fields['nombre'] = destino.nombre ?? '';
