@@ -31,6 +31,12 @@ class HomeScreen extends StatelessWidget {
         children: [
           _buildMenuCard(
             context,
+            'Destinos',
+            Icons.landscape,
+            () => Navigator.pushNamed(context, '/destinos'),
+          ),
+          _buildMenuCard(
+            context,
             'Hospedajes',
             Icons.hotel,
             () => Navigator.pushNamed(context, '/hospedajes'),
