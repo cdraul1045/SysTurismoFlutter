@@ -14,11 +14,18 @@ class ClienteService {
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => Cliente.fromJson(json)).toList();
+        print('Respuesta del backend (listarClientes): $data'); // Debug
+        final clientes = data.map((json) {
+          print('Procesando cliente: $json'); // Debug
+          return Cliente.fromJson(json);
+        }).toList();
+        print('Clientes procesados: ${clientes.map((c) => c.toString()).join('\n')}'); // Debug
+        return clientes;
       } else {
         throw Exception('Error al obtener los clientes: ${response.statusCode}');
       }
     } catch (e) {
+      print('Error en listarClientes: $e'); // Debug
       throw Exception('Error de conexion: $e');
     }
   }
@@ -101,9 +108,24 @@ class ClienteService {
 
   Future<Cliente> actualizarCliente(Cliente cliente) async {
     try {
+      if (cliente.idCliente == null) {
+        throw Exception('El ID del cliente es requerido para actualizar');
+      }
+
+      final Map<String, dynamic> datosActualizados = {
+        'idCliente': cliente.idCliente,
+        'nombres': cliente.nombres,
+        'apellidos': cliente.apellidos,
+        'correo': cliente.correo,
+        'direccion': cliente.direccion,
+        'whatsappContacto': cliente.whatsappContacto,
+        'tipoDocumento': cliente.tipoDocumento,
+        'numeroDocumento': cliente.numeroDocumento,
+      };
+
       final response = await HttpService.put(
         '/api/cliente/actualizar/${cliente.idCliente}',
-        cliente.toJson(),
+        datosActualizados,
       );
       
       if (response.statusCode == 200) {
@@ -119,6 +141,10 @@ class ClienteService {
 
   Future<Cliente> actualizarClienteConImagen(Cliente cliente, File imagen) async {
     try {
+      if (cliente.idCliente == null) {
+        throw Exception('El ID del cliente es requerido para actualizar');
+      }
+
       var request = http.MultipartRequest(
         'PUT',
         Uri.parse('$baseUrl/api/cliente/actualizar-con-imagen/${cliente.idCliente}'),
@@ -161,12 +187,17 @@ class ClienteService {
 
   Future<void> eliminarCliente(int id) async {
     try {
+      print('Intentando eliminar cliente con ID: $id'); // Debug
       final response = await HttpService.delete('/api/cliente/eliminar/$id');
       
       if (response.statusCode != 200) {
+        print('Error al eliminar cliente. Status: ${response.statusCode}'); // Debug
+        print('Respuesta: ${response.body}'); // Debug
         throw Exception('Error al eliminar el cliente: ${response.statusCode}');
       }
+      print('Cliente eliminado exitosamente'); // Debug
     } catch (e) {
+      print('Error en eliminarCliente: $e'); // Debug
       throw Exception('Error de conexion: $e');
     }
   }

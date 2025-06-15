@@ -78,7 +78,6 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -87,51 +86,35 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
         nombres: _nombresController.text,
         apellidos: _apellidosController.text,
         correo: _correoController.text,
-        password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
+        password: _passwordController.text,
         direccion: _direccionController.text,
         whatsappContacto: _whatsappController.text,
         tipoDocumento: _tipoDocumento,
         numeroDocumento: _numeroDocumentoController.text,
       );
 
-      if (widget.cliente == null) {
-        // Crear nuevo cliente
-        if (_imageFile != null) {
-          await _clienteService.guardarClienteConImagen(
-            cliente,
-            _imageFile!,
-          );
-        } else {
-          await _clienteService.guardarCliente(cliente);
-        }
+      Cliente clienteGuardado;
+      if (_imageFile != null) {
+        clienteGuardado = await _clienteService.guardarClienteConImagen(
+          cliente,
+          _imageFile!,
+        );
       } else {
-        // Actualizar cliente existente
-        if (_imageFile != null) {
-          await _clienteService.actualizarClienteConImagen(
-            cliente,
-            _imageFile!,
-          );
-        } else {
-          await _clienteService.actualizarCliente(cliente);
-        }
+        clienteGuardado = await _clienteService.guardarCliente(cliente);
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.cliente == null
-                  ? 'Cliente creado exitosamente'
-                  : 'Cliente actualizado exitosamente',
-            ),
-          ),
+          const SnackBar(content: Text('Cliente guardado exitosamente')),
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, clienteGuardado);
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error al guardar el cliente: $e';
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar el cliente: $e')),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
