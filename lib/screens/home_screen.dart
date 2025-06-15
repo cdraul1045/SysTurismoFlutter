@@ -65,6 +65,12 @@ class HomeScreen extends StatelessWidget {
             Icons.people,
             () => Navigator.pushNamed(context, '/clientes'),
           ),
+          _buildMenuCard(
+            context,
+            'Inventario',
+            Icons.inventory_2,
+            () => Navigator.pushNamed(context, '/inventario'),
+          ),
         ],
       ),
     );
