@@ -6,27 +6,43 @@ import '../models/destino_model.dart';
 import 'http_service.dart';
 
 class DestinoService {
-  final String baseUrl = 'http://192.168.0.105:8081';
+  final String baseUrl = 'http://192.168.0.105:8081/api/destino';
+
+  Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    
+    if (token == null) {
+      throw Exception('No hay token de autenticación. Por favor, inicie sesión.');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
 
   Future<List<Destino>> listarDestinos() async {
     try {
-      final response = await HttpService.get('/api/destino/listar');
-      print('Respuesta de listar destinos: ${response.body}');
-      
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/listar'),
+        headers: headers,
+      );
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        final destinos = data.map((json) => Destino.fromJson(json)).toList();
-        print('Destinos parseados: ${destinos.length}');
-        for (var destino in destinos) {
-          print('Destino parseado: ${destino.toString()}');
-        }
-        return destinos;
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return jsonResponse.map((item) => Destino.fromJson(item)).toList();
+      } else if (response.statusCode == 401) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('token');
+        throw Exception('Sesión expirada. Por favor, inicie sesión nuevamente.');
       } else {
-        throw Exception('Error al obtener los destinos: ${response.statusCode}');
+        throw Exception('Error al cargar los destinos: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('Error en listarDestinos: $e');
-      throw Exception('Error de conexion: $e');
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -122,7 +138,7 @@ class DestinoService {
       print('Guardando destino con imagen: ${destino.toString()}');
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/api/destino/guardar-con-imagen'),
+        Uri.parse('$baseUrl/guardar-con-imagen'),
       );
 
       request.fields['nombre'] = destino.nombre ?? '';
@@ -160,7 +176,7 @@ class DestinoService {
       print('Actualizando destino con imagen. ID: ${destino.idDestino}');
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/api/destino/guardar-con-imagen'),
+        Uri.parse('$baseUrl/guardar-con-imagen'),
       );
 
       request.fields['nombre'] = destino.nombre ?? '';
