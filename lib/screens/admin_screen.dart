@@ -10,7 +10,7 @@ class AdminScreen extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     if (context.mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
   }
 
@@ -42,6 +42,7 @@ class AdminScreen extends StatelessWidget {
           _buildMenuOption(context, 'Gestión de Destinos', Icons.place, AppRoutes.destinos),
           _buildMenuOption(context, 'Gestión de Hospedajes', Icons.hotel, AppRoutes.hospedajes),
           _buildMenuOption(context, 'Gestión de Actividades', Icons.directions_run, AppRoutes.actividades),
+          _buildMenuOption(context, 'Gestión de Restaurantes', Icons.restaurant, AppRoutes.restaurantes),
         ],
       ),
     );
