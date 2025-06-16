@@ -19,11 +19,74 @@ class _HospedajeScreenState extends State<HospedajeScreen> {
   List<Destino> _destinos = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _selectedDestino;
+  RangeValues _precioRange = const RangeValues(50, 500);
+  String? _selectedDireccion;
+  
+  // Lista de destinos disponibles
+  final List<String> _destinosList = ["Capachica", "Chifrón", "Isla", "Llachón"];
+  
+  // Lista de direcciones disponibles
+  final List<String> _direcciones = [
+    "Calle Principal",
+    "Avenida Central",
+    "Plaza Mayor",
+    "Zona Turística"
+  ];
+
+  // Lista de hospedajes de prueba
+  final List<Hospedaje> _hospedajesList = [
+    Hospedaje(
+      idHospedaje: 1,
+      nombre: "Hotel Capachica",
+      descripcion: "Hotel con vista al lago",
+      precioPorNoche: 150.0,
+      idDestino: 1,
+      direccion: "Calle Principal",
+    ),
+    Hospedaje(
+      idHospedaje: 2,
+      nombre: "Hostal Chifrón",
+      descripcion: "Hostal familiar",
+      precioPorNoche: 80.0,
+      idDestino: 2,
+      direccion: "Avenida Central",
+    ),
+    Hospedaje(
+      idHospedaje: 3,
+      nombre: "Cabañas Isla",
+      descripcion: "Cabañas rústicas",
+      precioPorNoche: 200.0,
+      idDestino: 3,
+      direccion: "Plaza Mayor",
+    ),
+    Hospedaje(
+      idHospedaje: 4,
+      nombre: "Hotel Llachón",
+      descripcion: "Hotel de lujo",
+      precioPorNoche: 300.0,
+      idDestino: 4,
+      direccion: "Zona Turística",
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     _cargarDatos();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _cargarDatos() async {
@@ -219,45 +282,202 @@ class _HospedajeScreenState extends State<HospedajeScreen> {
     return destino.nombre ?? 'Sin destino';
   }
 
+  List<Hospedaje> get _filteredHospedajes {
+    return _hospedajes.where((hospedaje) {
+      final matchesSearch = hospedaje.nombre.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesDestino = _selectedDestino == null || 
+          _obtenerNombreDestino(hospedaje.idDestino) == _selectedDestino;
+      final matchesPrecio = hospedaje.precioPorNoche != null &&
+          hospedaje.precioPorNoche! >= _precioRange.start &&
+          hospedaje.precioPorNoche! <= _precioRange.end;
+      final matchesDireccion = _selectedDireccion == null ||
+          hospedaje.direccion == _selectedDireccion;
+      
+      return matchesSearch && matchesDestino && matchesPrecio && matchesDireccion;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestión de Hospedajes'),
+        title: const Text('Hospedajes'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Text('Error: $_error'))
-              : ListView.builder(
-                  itemCount: _hospedajes.length,
-                  itemBuilder: (context, index) {
-                    final hospedaje = _hospedajes[index];
-                    return ListTile(
-                      title: Text(hospedaje.nombre ?? 'Sin nombre'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Destino: ${_obtenerNombreDestino(hospedaje.idDestino)}'),
-                          Text('Precio por noche: \$${hospedaje.precioPorNoche ?? 0}'),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _mostrarFormulario(hospedaje),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _eliminarHospedaje(hospedaje),
-                          ),
-                        ],
-                      ),
-                    );
+      body: Column(
+        children: [
+          // Campo de búsqueda
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar Hospedajes',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+              ),
+            ),
+          ),
+
+          // Filtros
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                // Filtro de destino
+                DropdownButton<String>(
+                  value: _selectedDestino,
+                  hint: const Text('Destino'),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('Todos los destinos'),
+                    ),
+                    ..._destinos.map((destino) {
+                      return DropdownMenuItem<String>(
+                        value: destino.nombre,
+                        child: Text(destino.nombre ?? 'Sin nombre'),
+                      );
+                    }).toList(),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDestino = value;
+                    });
                   },
                 ),
+                const SizedBox(width: 16),
+
+                // Filtro de dirección
+                DropdownButton<String>(
+                  value: _selectedDireccion,
+                  hint: const Text('Dirección'),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('Todas las direcciones'),
+                    ),
+                    ..._direcciones.map((direccion) {
+                      return DropdownMenuItem<String>(
+                        value: direccion,
+                        child: Text(direccion),
+                      );
+                    }).toList(),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDireccion = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Filtro de precio
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Rango de Precio (S/.)',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                RangeSlider(
+                  values: _precioRange,
+                  min: 50,
+                  max: 500,
+                  divisions: 45,
+                  labels: RangeLabels(
+                    'S/. ${_precioRange.start.round()}',
+                    'S/. ${_precioRange.end.round()}',
+                  ),
+                  onChanged: (values) {
+                    setState(() {
+                      _precioRange = values;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Lista de hospedajes
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _filteredHospedajes.length,
+              itemBuilder: (context, index) {
+                final hospedaje = _filteredHospedajes[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hospedaje.nombre,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (hospedaje.descripcion != null) ...[
+                          Text(
+                            hospedaje.descripcion!,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'S/. ${hospedaje.precioPorNoche?.toStringAsFixed(2) ?? "0.00"}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            if (hospedaje.direccion != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  hospedaje.direccion!,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarFormulario(),
         child: const Icon(Icons.add),
