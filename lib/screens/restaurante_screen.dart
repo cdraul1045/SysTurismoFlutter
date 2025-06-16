@@ -27,11 +27,31 @@ class _RestauranteScreenState extends State<RestauranteScreen> {
   List<Destino> _destinos = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _selectedDestino;
+  String? _selectedDireccion;
+  
+  // Lista de destinos disponibles
+  final List<String> _destinosList = ["Capachica", "Chifrón", "Isla", "Llachón"];
+  
+  // Lista de direcciones disponibles
+  final List<String> _direcciones = [
+    "Calle Principal",
+    "Avenida Central",
+    "Plaza Mayor",
+    "Zona Turística"
+  ];
 
   @override
   void initState() {
     super.initState();
     _cargarDatos();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
   }
 
   Future<void> _cargarDatos() async {
@@ -58,12 +78,10 @@ class _RestauranteScreenState extends State<RestauranteScreen> {
   }
 
   String _obtenerNombreDestino(int? idDestino) {
-    if (idDestino == null) return 'Sin destino';
-    final destino = _destinos.firstWhere(
-      (d) => d.idDestino == idDestino,
-      orElse: () => Destino(idDestino: idDestino, nombre: 'Desconocido'),
-    );
-    return destino.nombre ?? 'Sin nombre';
+    if (idDestino == null || idDestino < 1 || idDestino > _destinosList.length) {
+      return 'Sin destino';
+    }
+    return _destinosList[idDestino - 1];
   }
 
   Future<void> _seleccionarImagen() async {
@@ -287,58 +305,160 @@ class _RestauranteScreenState extends State<RestauranteScreen> {
     }
   }
 
+  List<Restaurante> get _filteredRestaurantes {
+    return _restaurantes.where((restaurante) {
+      final matchesSearch = restaurante.nombre.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesDestino = _selectedDestino == null || 
+          _obtenerNombreDestino(restaurante.idDestino) == _selectedDestino;
+      final matchesDireccion = _selectedDireccion == null ||
+          restaurante.direccion == _selectedDireccion;
+      
+      return matchesSearch && matchesDestino && matchesDireccion;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestión de Restaurantes'),
+        title: const Text('Restaurantes'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text(_error!))
-              : ListView.builder(
-                  itemCount: _restaurantes.length,
-                  itemBuilder: (context, index) {
-                    final restaurante = _restaurantes[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
-                        leading: restaurante.imagenPath != null
-                            ? Image.network(
-                                'http://192.168.0.105:8081${restaurante.imagenPath}',
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.error),
-                              )
-                            : const Icon(Icons.restaurant),
-                        title: Text(restaurante.nombre),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Destino: ${_obtenerNombreDestino(restaurante.idDestino)}'),
-                            if (restaurante.direccion != null)
-                              Text('Dirección: ${restaurante.direccion}'),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => _mostrarFormulario(restaurante),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => _eliminarRestaurante(restaurante),
-                            ),
-                          ],
+              : Column(
+                  children: [
+                    // Campo de búsqueda
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Buscar Restaurantes',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
                         ),
                       ),
-                    );
-                  },
+                    ),
+
+                    // Filtros
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          // Filtro de destino
+                          DropdownButton<String>(
+                            value: _selectedDestino,
+                            hint: const Text('Destino'),
+                            items: [
+                              const DropdownMenuItem<String>(
+                                value: null,
+                                child: Text('Todos los destinos'),
+                              ),
+                              ..._destinosList.map((destino) {
+                                return DropdownMenuItem<String>(
+                                  value: destino,
+                                  child: Text(destino),
+                                );
+                              }).toList(),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedDestino = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 16),
+
+                          // Filtro de dirección
+                          DropdownButton<String>(
+                            value: _selectedDireccion,
+                            hint: const Text('Dirección'),
+                            items: [
+                              const DropdownMenuItem<String>(
+                                value: null,
+                                child: Text('Todas las direcciones'),
+                              ),
+                              ..._direcciones.map((direccion) {
+                                return DropdownMenuItem<String>(
+                                  value: direccion,
+                                  child: Text(direccion),
+                                );
+                              }).toList(),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedDireccion = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Lista de restaurantes
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredRestaurantes.length,
+                        itemBuilder: (context, index) {
+                          final restaurante = _filteredRestaurantes[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    restaurante.nombre,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  if (restaurante.descripcion != null) ...[
+                                    Text(
+                                      restaurante.descripcion!,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  if (restaurante.direccion != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        restaurante.direccion!,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarFormulario(),
@@ -353,6 +473,7 @@ class _RestauranteScreenState extends State<RestauranteScreen> {
     _descripcionController.dispose();
     _direccionController.dispose();
     _whatsappController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 } 
