@@ -21,27 +21,27 @@ class Actividad {
 
   factory Actividad.fromJson(Map<String, dynamic> json) {
     return Actividad(
-      idActividad: json['idActividad'],
+      idActividad: json['id_actividad'],
       nombre: json['nombre'],
       descripcion: json['descripcion'],
       precio: json['precio']?.toDouble(),
-      idDestino: json['idDestino'],
-      nivelRiesgo: json['nivelRiesgo'],
-      whatsappContacto: json['whatsappContacto'],
-      imagenPath: json['imagenPath'],
+      idDestino: json['id_destino'],
+      nivelRiesgo: json['nivel_riesgo'],
+      whatsappContacto: json['whatsapp_contacto'],
+      imagenPath: json['imagen_path'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'idActividad': idActividad,
+      'id_actividad': idActividad,
       'nombre': nombre,
       'descripcion': descripcion,
       'precio': precio,
-      'idDestino': idDestino,
-      'nivelRiesgo': nivelRiesgo,
-      'whatsappContacto': whatsappContacto,
-      'imagenPath': imagenPath,
+      'id_destino': idDestino,
+      'nivel_riesgo': nivelRiesgo,
+      'whatsapp_contacto': whatsappContacto,
+      'imagen_path': imagenPath,
     };
   }
 
