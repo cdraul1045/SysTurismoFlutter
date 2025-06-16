@@ -1,11 +1,4 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/cliente_profile_screen.dart';
-import 'screens/clientes_screen.dart';
-import 'screens/destinos_screen.dart';
-import 'screens/inventario_screen.dart';
-import 'screens/inventario_actividad_screen.dart';
 import 'routes/app_routes.dart';
 
 void main() {
@@ -44,19 +37,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/cliente-profile': (context) => ClienteProfileScreen(
-          correo: ModalRoute.of(context)!.settings.arguments as String,
-        ),
-        '/clientes': (context) => const ClientesScreen(),
-        '/destinos': (context) => const DestinosScreen(),
-        '/inventario': (context) => const InventarioScreen(),
-        '/inventario-actividad': (context) => const InventarioActividadScreen(),
-        ...AppRoutes.getRoutes(),
-      },
+      initialRoute: AppRoutes.login,
+      routes: AppRoutes.getRoutes(),
     );
   }
 }

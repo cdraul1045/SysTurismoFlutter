@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../routes/app_routes.dart';
-import 'hospedaje_screen.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
-  Future<void> _cerrarSesion(BuildContext context) async {
+  void _cerrarSesion(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     if (context.mounted) {
@@ -14,12 +13,21 @@ class AdminScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildMenuOption(BuildContext context, String title, IconData icon, String route) {
+  Widget _buildMenuOption(
+    BuildContext context,
+    String title,
+    IconData icon,
+    String route,
+  ) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
+        leading: Icon(icon, size: 32),
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 18),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios),
         onTap: () => Navigator.pushNamed(context, route),
       ),
     );
@@ -29,7 +37,7 @@ class AdminScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SysTurismo - Administrador'),
+        title: const Text('SysTurismo-Administrador'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -38,11 +46,62 @@ class AdminScreen extends StatelessWidget {
         ],
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
-          _buildMenuOption(context, 'Gestión de Destinos', Icons.place, AppRoutes.destinos),
-          _buildMenuOption(context, 'Gestión de Hospedajes', Icons.hotel, AppRoutes.hospedajes),
-          _buildMenuOption(context, 'Gestión de Actividades', Icons.directions_run, AppRoutes.actividades),
-          _buildMenuOption(context, 'Gestión de Restaurantes', Icons.restaurant, AppRoutes.restaurantes),
+          _buildMenuOption(
+            context,
+            'Gestión de Destinos',
+            Icons.place,
+            AppRoutes.destinos,
+          ),
+          _buildMenuOption(
+            context,
+            'Gestión de Hospedajes',
+            Icons.hotel,
+            AppRoutes.hospedajes,
+          ),
+          _buildMenuOption(
+            context,
+            'Gestión de Restaurantes',
+            Icons.restaurant,
+            AppRoutes.restaurantes,
+          ),
+          _buildMenuOption(
+            context,
+            'Gestión de Actividades',
+            Icons.directions_run,
+            AppRoutes.actividades,
+          ),
+          _buildMenuOption(
+            context,
+            'Gestión de Paquetes Turísticos',
+            Icons.card_travel,
+            AppRoutes.paquetes,
+          ),
+          _buildMenuOption(
+            context,
+            'Gestión de Clientes',
+            Icons.people,
+            AppRoutes.clientes,
+          ),
+          _buildMenuOption(
+            context,
+            'Inventario',
+            Icons.inventory,
+            AppRoutes.inventario,
+          ),
+          _buildMenuOption(
+            context,
+            'Inventario Actividades',
+            Icons.event_note,
+            AppRoutes.inventarioActividad,
+          ),
+          _buildMenuOption(
+            context,
+            'Reservas',
+            Icons.calendar_today,
+            AppRoutes.reservas,
+          ),
         ],
       ),
     );

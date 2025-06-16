@@ -214,7 +214,7 @@ class _HospedajeScreenState extends State<HospedajeScreen> {
     if (idDestino == null) return 'Sin destino';
     final destino = _destinos.firstWhere(
       (d) => d.idDestino == idDestino,
-      orElse: () => Destino(nombre: 'Sin destino'),
+      orElse: () => Destino.defaultDestino(),
     );
     return destino.nombre ?? 'Sin destino';
   }

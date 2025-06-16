@@ -68,7 +68,7 @@ class _DestinoFormScreenState extends State<DestinoFormScreen> {
 
     try {
       final destino = Destino(
-        idDestino: widget.destino?.idDestino,
+        idDestino: widget.destino?.idDestino ?? 0,
         nombre: _nombreController.text,
         descripcion: _descripcionController.text,
         ubicacion: _ubicacionController.text,

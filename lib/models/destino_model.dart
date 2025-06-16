@@ -16,47 +16,12 @@ class Destino {
   });
 
   factory Destino.fromJson(Map<String, dynamic> json) {
-    print('Procesando JSON del destino: $json');
-    
-    int? parseId(dynamic value) {
-      if (value == null) return null;
-      print('Tipo de valor para ID: ${value.runtimeType}');
-      
-      if (value is int) {
-        print('ID es int: $value');
-        return value;
-      }
-      
-      if (value is String) {
-        try {
-          final id = int.parse(value);
-          print('ID parseado de String: $id');
-          return id;
-        } catch (e) {
-          print('Error al parsear ID de String: $e');
-          return null;
-        }
-      }
-      
-      if (value is double) {
-        final id = value.toInt();
-        print('ID convertido de double: $id');
-        return id;
-      }
-      
-      print('Tipo de ID no reconocido: ${value.runtimeType}');
-      return null;
-    }
-
-    final id = parseId(json['idDestino']);
-    print('ID final parseado: $id');
-
     return Destino(
-      idDestino: id,
-      nombre: json['nombre'],
-      descripcion: json['descripcion'],
-      ubicacion: json['ubicacion'],
-      imagenPath: json['imagenPath'],
+      idDestino: json['idDestino'] as int?,
+      nombre: json['nombre'] as String?,
+      descripcion: json['descripcion'] as String?,
+      ubicacion: json['ubicacion'] as String?,
+      imagenPath: json['imagenPath'] as String?,
     );
   }
 
@@ -68,6 +33,16 @@ class Destino {
       'ubicacion': ubicacion,
       'imagenPath': imagenPath,
     };
+  }
+
+  // Constructor para crear un destino por defecto
+  factory Destino.defaultDestino() {
+    return Destino(
+      idDestino: 0,
+      nombre: 'Sin destino',
+      descripcion: 'Sin descripción',
+      ubicacion: 'Sin ubicación',
+    );
   }
 
   @override

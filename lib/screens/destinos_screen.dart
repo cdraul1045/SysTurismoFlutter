@@ -12,6 +12,13 @@ class DestinosScreen extends StatefulWidget {
 
 class _DestinosScreenState extends State<DestinosScreen> {
   final DestinoService _destinoService = DestinoService();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _selectedUbicacion;
+  
+  // Lista de ubicaciones disponibles
+  final List<String> _ubicaciones = ["Capachica", "Chifrón", "Isla", "Llachón"];
+
   List<Destino> _destinos = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -20,6 +27,17 @@ class _DestinosScreenState extends State<DestinosScreen> {
   void initState() {
     super.initState();
     _cargarDestinos();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _cargarDestinos() async {
@@ -154,95 +172,155 @@ class _DestinosScreenState extends State<DestinosScreen> {
     }
   }
 
+  List<Destino> get _filteredDestinos {
+    return _destinos.where((destino) {
+      final matchesSearch = destino.nombre?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
+      final matchesUbicacion = _selectedUbicacion == null || destino.ubicacion == _selectedUbicacion;
+      return matchesSearch && matchesUbicacion;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestión de Destinos'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _cargarDestinos,
+        title: const Text('Destinos'),
+      ),
+      body: Column(
+        children: [
+          // Campo de búsqueda
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar Destinos',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+              ),
+            ),
+          ),
+
+          // Filtros de ubicación
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                FilterChip(
+                  label: const Text('Todos'),
+                  selected: _selectedUbicacion == null,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedUbicacion = null;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                ..._ubicaciones.map((ubicacion) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(ubicacion),
+                      selected: _selectedUbicacion == ubicacion,
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedUbicacion = selected ? ubicacion : null;
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+
+          // Lista de destinos
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.red),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _cargarDestinos,
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _filteredDestinos.isEmpty
+                        ? const Center(
+                            child: Text('No hay destinos registrados'),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _cargarDestinos,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _filteredDestinos.length,
+                              itemBuilder: (context, index) {
+                                final destino = _filteredDestinos[index];
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  child: ListTile(
+                                    title: Text(
+                                      destino.nombre ?? 'Sin nombre',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          destino.descripcion ?? 'Sin descripción',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade100,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            destino.ubicacion ?? 'Sin ubicación',
+                                            style: TextStyle(
+                                              color: Colors.blue.shade900,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    isThreeLine: true,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _cargarDestinos,
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                )
-              : _destinos.isEmpty
-                  ? const Center(
-                      child: Text('No hay destinos registrados'),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _cargarDestinos,
-                      child: ListView.builder(
-                        itemCount: _destinos.length,
-                        itemBuilder: (context, index) {
-                          final destino = _destinos[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: destino.imagenPath != null
-                                    ? NetworkImage('http://192.168.0.105:8081${destino.imagenPath}')
-                                    : null,
-                                child: destino.imagenPath == null
-                                    ? const Icon(Icons.landscape)
-                                    : null,
-                              ),
-                              title: Text(
-                                destino.nombre ?? 'Sin nombre',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (destino.descripcion != null)
-                                    Text('Descripción: ${destino.descripcion}'),
-                                  if (destino.ubicacion != null)
-                                    Text('Ubicación: ${destino.ubicacion}'),
-                                ],
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => _editarDestino(destino),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () => _mostrarDialogoEliminar(destino),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
       floatingActionButton: FloatingActionButton(
         onPressed: _agregarDestino,
         child: const Icon(Icons.add),
