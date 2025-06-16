@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 import '../models/destino_model.dart';
 import '../services/destino_service.dart';
+import '../services/report_service.dart';
 import 'destino_form_screen.dart';
 
 class DestinosScreen extends StatefulWidget {
@@ -12,6 +15,7 @@ class DestinosScreen extends StatefulWidget {
 
 class _DestinosScreenState extends State<DestinosScreen> {
   final DestinoService _destinoService = DestinoService();
+  final ReportService _reportService = ReportService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String? _selectedUbicacion;
@@ -309,6 +313,13 @@ class _DestinosScreenState extends State<DestinosScreen> {
         title: const Text('Destinos'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: () => _reportService.generarReportePDF(context, _destinos),
+            tooltip: 'Generar Reporte PDF',
+          ),
+        ],
       ),
       body: Column(
         children: [
