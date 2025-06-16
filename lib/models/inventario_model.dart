@@ -13,19 +13,19 @@ class Inventario {
 
   factory Inventario.fromJson(Map<String, dynamic> json) {
     return Inventario(
-      idInventario: json['idInventario'],
-      nombreItem: json['nombreItem'],
-      cantidadDisponible: json['cantidadDisponible'],
-      idDestino: json['idDestino'],
+      idInventario: json['id_inventario'],
+      nombreItem: json['nombre_item'],
+      cantidadDisponible: json['cantidad_disponible'],
+      idDestino: json['id_destino'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'idInventario': idInventario,
-      'nombreItem': nombreItem,
-      'cantidadDisponible': cantidadDisponible,
-      'idDestino': idDestino,
+      'id_inventario': idInventario,
+      'nombre_item': nombreItem,
+      'cantidad_disponible': cantidadDisponible,
+      'id_destino': idDestino,
     };
   }
 

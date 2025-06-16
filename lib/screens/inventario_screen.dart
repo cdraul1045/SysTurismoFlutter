@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import '../models/inventario_model.dart';
 import '../services/inventario_service.dart';
 import '../services/destino_service.dart';
-import '../models/inventario_model.dart';
 
 class InventarioScreen extends StatefulWidget {
-  const InventarioScreen({Key? key}) : super(key: key);
+  const InventarioScreen({super.key});
 
   @override
   State<InventarioScreen> createState() => _InventarioScreenState();
 }
 
 class _InventarioScreenState extends State<InventarioScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  RangeValues _cantidadRange = const RangeValues(0, 100);
+  String? _selectedDestino;
+  
+  final List<String> _destinos = ["Capachica", "Chifrón", "Isla", "Llachón"];
+  
   final InventarioService _inventarioService = InventarioService();
   final DestinoService _destinoService = DestinoService();
   List<Inventario> _inventario = [];
-  List<dynamic> _destinos = [];
+  List<dynamic> _destinosList = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -36,7 +42,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
 
       setState(() {
         _inventario = inventario;
-        _destinos = destinos;
+        _destinosList = destinos;
         _isLoading = false;
       });
     } catch (e) {
@@ -47,10 +53,10 @@ class _InventarioScreenState extends State<InventarioScreen> {
     }
   }
 
-  String _obtenerNombreDestino(int? idDestino) {
+  String _getNombreDestino(int? idDestino) {
     if (idDestino == null) return 'Sin destino';
     try {
-      final destino = _destinos.firstWhere(
+      final destino = _destinosList.firstWhere(
         (d) => d.idDestino == idDestino,
         orElse: () => null,
       );
@@ -98,7 +104,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                   labelText: 'Destino',
                   border: OutlineInputBorder(),
                 ),
-                items: _destinos.map((destino) {
+                items: _destinosList.map((destino) {
                   return DropdownMenuItem<int>(
                     value: destino.idDestino,
                     child: Text(destino.nombre ?? 'Sin nombre'),
@@ -140,7 +146,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 if (item == null) {
                   await _inventarioService.guardarInventario(inventario);
                 } else {
-                  await _inventarioService.editarInventario(inventario);
+                  await _inventarioService.actualizarInventario(inventario);
                 }
 
                 if (mounted) {
@@ -197,11 +203,36 @@ class _InventarioScreenState extends State<InventarioScreen> {
     }
   }
 
+  List<Inventario> get _filteredInventario {
+    return _inventario.where((item) {
+      final nombreMatch = item.nombreItem?.toLowerCase().contains(_searchController.text.toLowerCase()) ?? false;
+      final cantidadMatch = item.cantidadDisponible != null &&
+          item.cantidadDisponible! >= _cantidadRange.start &&
+          item.cantidadDisponible! <= _cantidadRange.end;
+      final destinoMatch = _selectedDestino == null || 
+          _getNombreDestino(item.idDestino) == _selectedDestino;
+
+      return nombreMatch && cantidadMatch && destinoMatch;
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de Inventario'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _cargarDatos,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -211,7 +242,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _errorMessage!,
+                        'Error: $_errorMessage',
                         style: const TextStyle(color: Colors.red),
                         textAlign: TextAlign.center,
                       ),
@@ -223,72 +254,148 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     ],
                   ),
                 )
-              : _inventario.isEmpty
-                  ? const Center(
-                      child: Text('No hay items en el inventario'),
-                    )
-                  : ListView.builder(
-                      itemCount: _inventario.length,
-                      itemBuilder: (context, index) {
-                        final item = _inventario[index];
-                        final nombreDestino = _obtenerNombreDestino(item.idDestino);
-
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: ListTile(
-                            title: Text(item.nombreItem ?? 'Sin nombre'),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Cantidad: ${item.cantidadDisponible}'),
-                                Text('Destino: $nombreDestino'),
-                              ],
+              : Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.grey[100],
+                      child: Column(
+                        children: [
+                          // Campo de búsqueda
+                          TextField(
+                            controller: _searchController,
+                            decoration: const InputDecoration(
+                              labelText: 'Buscar ítem',
+                              prefixIcon: Icon(Icons.search),
+                              border: OutlineInputBorder(),
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => _mostrarFormulario(item),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () => showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Confirmar eliminación'),
-                                      content: const Text(
-                                        '¿Está seguro de eliminar este item?',
+                            onChanged: (value) => setState(() {}),
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Filtro por cantidad
+                          const Text('Cantidad disponible:'),
+                          RangeSlider(
+                            values: _cantidadRange,
+                            min: 0,
+                            max: 100,
+                            divisions: 20,
+                            labels: RangeLabels(
+                              _cantidadRange.start.round().toString(),
+                              _cantidadRange.end.round().toString(),
+                            ),
+                            onChanged: (RangeValues values) {
+                              setState(() {
+                                _cantidadRange = values;
+                              });
+                            },
+                          ),
+                          Text(
+                            'Rango: ${_cantidadRange.start.round()} - ${_cantidadRange.end.round()}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Filtro por destino
+                          const Text('Filtrar por destino:'),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              FilterChip(
+                                label: const Text('Todos'),
+                                selected: _selectedDestino == null,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _selectedDestino = null;
+                                  });
+                                },
+                              ),
+                              ..._destinos.map((destino) => FilterChip(
+                                label: Text(destino),
+                                selected: _selectedDestino == destino,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _selectedDestino = selected ? destino : null;
+                                  });
+                                },
+                              )),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: _filteredInventario.isEmpty
+                          ? const Center(
+                              child: Text('No hay items en el inventario'),
+                            )
+                          : ListView.builder(
+                              itemCount: _filteredInventario.length,
+                              itemBuilder: (context, index) {
+                                final item = _filteredInventario[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: Theme.of(context).primaryColor,
+                                      child: Text(
+                                        item.nombreItem?.substring(0, 1).toUpperCase() ?? '?',
+                                        style: const TextStyle(color: Colors.white),
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text('Cancelar'),
+                                    ),
+                                    title: Text(item.nombreItem ?? 'Sin nombre'),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Cantidad: ${item.cantidadDisponible}'),
+                                        Text('Destino: ${_getNombreDestino(item.idDestino)}'),
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit),
+                                          onPressed: () => _mostrarFormulario(item),
                                         ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                            _eliminarItem(item.idInventario!);
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
+                                        IconButton(
+                                          icon: const Icon(Icons.delete),
+                                          onPressed: () => showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text('Confirmar eliminación'),
+                                              content: const Text(
+                                                '¿Está seguro de eliminar este item?',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context),
+                                                  child: const Text('Cancelar'),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                    _eliminarItem(item.idInventario!);
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                  child: const Text('Eliminar'),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          child: const Text('Eliminar'),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
                     ),
+                  ],
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarFormulario(),
         child: const Icon(Icons.add),
